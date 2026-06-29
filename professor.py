@@ -30,7 +30,6 @@ def render_professor() -> None:
     col2.metric("Alunos registrados", len(jogadores))
     col3.metric("Decisoes registradas", len(decisoes))
     col4.metric("Tempo restante", formatar_tempo(segundos_restantes(estado)))
-    st.metric("Indice de sustentabilidade do agroecossistema", f"{estado.get('Sustentabilidade geral', 0)}/100")
 
     st.info(resumo_rodada(estado))
 
@@ -130,8 +129,13 @@ def montar_url_aluno(base_url: str, sessao_id: str) -> str:
 
 
 def mostrar_barras(estado: dict) -> None:
+    sustentabilidade = estado.get("Sustentabilidade geral", 0)
+    st.markdown("### SUSTENTABILIDADE GERAL")
+    st.metric("Sustentabilidade geral", sustentabilidade)
+    st.progress(sustentabilidade / 100)
     cols = st.columns(2)
-    for indice, indicador in enumerate(INDICADORES):
+    indicadores_secundarios = [indicador for indicador in INDICADORES if indicador != "Sustentabilidade geral"]
+    for indice, indicador in enumerate(indicadores_secundarios):
         valor = estado.get(indicador, 0)
         cols[indice % 2].metric(indicador, valor)
         cols[indice % 2].progress(valor / 100)

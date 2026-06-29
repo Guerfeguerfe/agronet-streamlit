@@ -60,11 +60,13 @@ def render_aluno(sessao_id: str | None = None) -> None:
     if rodada_encerrada(estado):
         st.warning("O tempo desta rodada terminou. Aguarde o professor iniciar a proxima rodada.")
         mostrar_indicadores(estado)
+        botao_proxima_rodada()
         return
 
     if jogador_ja_decidiu(jogador["id"], rodada):
         st.success("Voce ja enviou sua decisao nesta rodada. Aguarde a proxima rodada.")
         mostrar_indicadores(estado)
+        botao_proxima_rodada()
         return
 
     opcoes = acoes_do_papel(jogador["papel"])
@@ -91,6 +93,7 @@ def render_aluno(sessao_id: str | None = None) -> None:
             st.write(f"- {indicador}: {delta:+d}")
         st.info(" ".join(feedbacks))
         mostrar_indicadores(novo_estado)
+        botao_proxima_rodada()
 
 
 def somar_impactos(papel: str, acoes: list[str]) -> dict[str, int]:
@@ -133,14 +136,22 @@ def mostrar_papel(papel: str) -> None:
             st.write(f"- **{acao}**: {feedback}")
 
 
+def botao_proxima_rodada() -> None:
+    st.caption("Use este botao quando o professor avisar que abriu a proxima rodada.")
+    if st.button("Proxima rodada", use_container_width=True):
+        st.rerun()
+
+
 def mostrar_indicadores(estado: dict) -> None:
     st.divider()
     st.subheader("Desempenho do agroecossistema")
-    indice = estado.get("Sustentabilidade geral", 0)
-    st.metric("Indice de sustentabilidade do agroecossistema", f"{indice}/100")
-    st.progress(indice / 100)
+    sustentabilidade = estado.get("Sustentabilidade geral", 0)
+    st.markdown("### SUSTENTABILIDADE GERAL")
+    st.metric("Sustentabilidade geral", f"{sustentabilidade}/100")
+    st.progress(sustentabilidade / 100)
     cols = st.columns(2)
-    for posicao, indicador in enumerate(INDICADORES):
+    indicadores_secundarios = [indicador for indicador in INDICADORES if indicador != "Sustentabilidade geral"]
+    for posicao, indicador in enumerate(indicadores_secundarios):
         valor = estado.get(indicador, 0)
         cols[posicao % 2].caption(indicador)
         cols[posicao % 2].progress(valor / 100, text=f"{valor}/100")

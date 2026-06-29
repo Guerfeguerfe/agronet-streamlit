@@ -57,6 +57,7 @@ agronet
 5. Mostre o QR Code aos alunos.
 6. Cada aluno acessa pelo QR Code, registra nome e matricula, escolhe o papel e envia ate duas acoes por rodada.
 7. Depois do primeiro cadastro, o link do aluno passa a conter um identificador do jogador. Assim, ao atualizar a pagina ou entrar na proxima rodada, ele nao precisa digitar nome e matricula novamente.
+8. Quando o aluno ja enviou a decisao ou o tempo acabou, o botao `Proxima rodada` apenas atualiza a pagina dele. A rodada do jogo continua sendo aberta pelo professor no painel.
 
 O tempo padrao de cada rodada e 4 minutos, adequado para turmas de 10 a 15 alunos em uma decisao rapida. O professor pode ajustar entre 2 e 10 minutos ao criar a sessao.
 
