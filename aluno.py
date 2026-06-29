@@ -5,7 +5,7 @@ import random
 import streamlit as st
 
 from dados import buscar_jogador_por_id, buscar_jogador_por_matricula, buscar_sessao, carregar_estado, jogador_ja_decidiu, registrar_decisao, registrar_jogador, salvar_estado, registrar_historico
-from regras import INDICADORES, acoes_do_papel, aplicar_impactos, feedback_da_acao, impacto_da_acao, listar_papeis
+from regras import INDICADORES, acoes_do_papel, aplicar_impactos, feedback_da_acao, funcoes_do_papel, impacto_da_acao, listar_papeis
 from tempo import formatar_tempo, rodada_encerrada, segundos_restantes
 
 
@@ -51,6 +51,7 @@ def render_aluno(sessao_id: str | None = None) -> None:
     st.divider()
     st.subheader(f"Rodada {rodada} de {estado['max_rodadas']}")
     st.caption(f"Papel: {jogador['papel']} | Estudante: {jogador['nome']}")
+    mostrar_papel(jogador["papel"])
 
     if rodada > estado["max_rodadas"]:
         st.info("O jogo foi encerrado pelo professor.")
@@ -119,6 +120,17 @@ def mostrar_cronometro(estado: dict) -> None:
     restante = segundos_restantes(estado)
     st.metric("Tempo restante da rodada", formatar_tempo(restante))
     st.progress(restante / max(1, int(estado.get("duracao_rodada_seg") or 240)))
+
+
+def mostrar_papel(papel: str) -> None:
+    with st.expander("Meu papel no agroecossistema", expanded=True):
+        st.write("Funcoes agroecossistemicas:")
+        for funcao in funcoes_do_papel(papel):
+            st.write(f"- {funcao}")
+        st.write("Alternativas de acao nesta rodada:")
+        for acao in acoes_do_papel(papel):
+            feedback = feedback_da_acao(papel, acao)
+            st.write(f"- **{acao}**: {feedback}")
 
 
 def mostrar_indicadores(estado: dict) -> None:

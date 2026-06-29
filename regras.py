@@ -16,6 +16,59 @@ INDICADORES = [
 
 INDICE_SUSTENTABILIDADE = "Sustentabilidade geral"
 
+FUNCOES_DOS_PAPEIS = {
+    "Agricultor": [
+        "Organiza o manejo humano do agroecossistema.",
+        "Define a diversidade do plantio, a cobertura do solo e a intensidade de intervencao.",
+        "Influencia diretamente producao, biodiversidade, solo, agua e pressao ambiental.",
+    ],
+    "Solo": [
+        "Sustenta as raizes, armazena agua e abriga organismos vivos.",
+        "Participa da ciclagem de nutrientes e da decomposicao da materia organica.",
+        "Determina parte importante da fertilidade, infiltracao e resiliencia do sistema.",
+    ],
+    "Agua": [
+        "Regula a disponibilidade hidrica para plantas, solo e organismos.",
+        "Conecta infiltracao, escoamento superficial e conservacao dos recursos naturais.",
+        "Influencia producao agricola, fertilidade e pressao ambiental.",
+    ],
+    "Planta cultivada": [
+        "Transforma energia solar em biomassa agricola.",
+        "Demanda agua e nutrientes, mas tambem pode alimentar polinizadores.",
+        "Mostra a relacao entre producao, fluxo de energia e equilibrio ecologico.",
+    ],
+    "Planta espontanea": [
+        "Amplia a cobertura viva e pode proteger o solo.",
+        "Oferece habitat e alimento para organismos, mas tambem pode competir com a cultura.",
+        "Ajuda a discutir biodiversidade funcional no agroecossistema.",
+    ],
+    "Polinizador": [
+        "Realiza a polinizacao e aumenta servicos ecossistemicos.",
+        "Depende de flores, vegetacao espontanea e habitat adequado.",
+        "Conecta biodiversidade, producao agricola e equilibrio ecologico.",
+    ],
+    "Decompositor": [
+        "Transforma residuos organicos em nutrientes disponiveis.",
+        "Fecha ciclos de materia e fortalece a vida do solo.",
+        "Depende de solo saudavel, umidade e materia organica.",
+    ],
+    "Predador natural": [
+        "Controla populacoes de pragas e reduz desequilibrios biologicos.",
+        "Depende de habitat e diversidade para permanecer no sistema.",
+        "Fortalece o equilibrio ecologico e reduz a necessidade de intervencoes agressivas.",
+    ],
+    "Comunidade rural": [
+        "Representa escolhas sociais, valores e pressoes sobre o manejo.",
+        "Pode apoiar conservacao ou pressionar por aumento rapido da producao.",
+        "Mostra que agroecossistemas tambem sao sistemas sociais.",
+    ],
+    "Orgao ambiental": [
+        "Orienta, regula e incentiva boas praticas ambientais.",
+        "Protege areas sensiveis, agua e biodiversidade.",
+        "Ajuda a equilibrar uso produtivo e conservacao do agroecossistema.",
+    ],
+}
+
 ESTADO_INICIAL = {
     "rodada_atual": 1,
     "max_rodadas": 5,
@@ -221,6 +274,10 @@ def listar_papeis() -> list[str]:
 
 def acoes_do_papel(papel: str) -> list[str]:
     return list(PAPEIS.get(papel, {}).keys())
+
+
+def funcoes_do_papel(papel: str) -> list[str]:
+    return FUNCOES_DOS_PAPEIS.get(papel, [])
 
 
 def impacto_da_acao(papel: str, acao: str) -> dict[str, int]:
