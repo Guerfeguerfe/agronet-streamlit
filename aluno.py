@@ -71,7 +71,12 @@ def render_aluno(sessao_id: str | None = None) -> None:
 
     opcoes = acoes_do_papel(jogador["papel"])
     with st.form("form_decisao"):
-        acoes = st.multiselect("Escolha ate 2 acoes", opcoes, max_selections=2)
+        acoes = st.multiselect(
+            "Escolha ate 2 acoes",
+            opcoes,
+            max_selections=2,
+            key=f"acoes_{sessao['sessao_id']}_{jogador['id']}_{rodada}",
+        )
         enviar = st.form_submit_button("Enviar decisao", use_container_width=True)
 
     if enviar:
@@ -139,7 +144,14 @@ def mostrar_papel(papel: str) -> None:
 def botao_proxima_rodada() -> None:
     st.caption("Use este botao quando o professor avisar que abriu a proxima rodada.")
     if st.button("Proxima rodada", use_container_width=True):
+        limpar_escolhas_anteriores()
         st.rerun()
+
+
+def limpar_escolhas_anteriores() -> None:
+    for chave in list(st.session_state.keys()):
+        if chave.startswith("acoes_"):
+            del st.session_state[chave]
 
 
 def mostrar_indicadores(estado: dict) -> None:
