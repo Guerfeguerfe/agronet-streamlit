@@ -4,8 +4,9 @@ import random
 
 import streamlit as st
 
-from dados import buscar_jogador_por_matricula, buscar_sessao, carregar_estado, jogador_ja_decidiu, registrar_decisao, registrar_jogador, salvar_estado, registrar_historico
+from dados import buscar_jogador_por_id, buscar_jogador_por_matricula, buscar_sessao, carregar_estado, jogador_ja_decidiu, registrar_decisao, registrar_jogador, salvar_estado, registrar_historico
 from regras import INDICADORES, acoes_do_papel, aplicar_impactos, feedback_da_acao, impacto_da_acao, listar_papeis
+from tempo import formatar_tempo, rodada_encerrada, segundos_restantes
 
 
 def render_aluno(sessao_id: str | None = None) -> None:
@@ -17,34 +18,33 @@ def render_aluno(sessao_id: str | None = None) -> None:
 
     st.subheader("Entrada do estudante")
     st.caption(f"Sessao: {sessao['nome_aula']} | Codigo: {sessao['sessao_id']}")
-    st.write("Registre-se, escolha ou sorteie seu papel e envie ate duas acoes na rodada atual.")
+    mostrar_cronometro(estado)
 
-    with st.form("form_registro"):
-        nome = st.text_input("Nome")
-        matricula = st.text_input("Matricula")
-        modo_papel = st.radio("Papel no agroecossistema", ["Escolher papel", "Sortear papel"], horizontal=True)
-        papel_escolhido = st.selectbox("Escolha seu papel", listar_papeis(), disabled=modo_papel == "Sortear papel")
-        registrar = st.form_submit_button("Entrar no jogo", use_container_width=True)
+    jogador = obter_jogador(sessao["sessao_id"])
+    if not jogador:
+        st.write("Registre-se uma vez. Depois, este aparelho/link continua reconhecendo sua participacao na aula.")
+        with st.form("form_registro"):
+            nome = st.text_input("Nome")
+            matricula = st.text_input("Matricula")
+            modo_papel = st.radio("Papel no agroecossistema", ["Escolher papel", "Sortear papel"], horizontal=True)
+            papel_escolhido = st.selectbox("Escolha seu papel", listar_papeis(), disabled=modo_papel == "Sortear papel")
+            registrar = st.form_submit_button("Entrar no jogo", use_container_width=True)
 
-    if registrar:
-        if not nome.strip() or not matricula.strip():
-            st.error("Informe nome e matricula para continuar.")
-            st.stop()
-        papel = random.choice(listar_papeis()) if modo_papel == "Sortear papel" else papel_escolhido
-        jogador = registrar_jogador(nome, matricula, papel, sessao["sessao_id"])
-        st.session_state["matricula"] = jogador["matricula"]
-        st.session_state["sessao_id"] = sessao["sessao_id"]
-        st.success(f"Registro encontrado/criado. Seu papel: {jogador['papel']}.")
-
-    matricula_atual = st.session_state.get("matricula", "")
-    if not matricula_atual:
+        if registrar:
+            if not nome.strip() or not matricula.strip():
+                st.error("Informe nome e matricula para continuar.")
+                st.stop()
+            papel = random.choice(listar_papeis()) if modo_papel == "Sortear papel" else papel_escolhido
+            jogador = registrar_jogador(nome, matricula, papel, sessao["sessao_id"])
+            st.session_state["jogador_id"] = jogador["id"]
+            st.session_state["matricula"] = jogador["matricula"]
+            st.session_state["sessao_id"] = sessao["sessao_id"]
+            st.query_params["sessao"] = sessao["sessao_id"]
+            st.query_params["jogador"] = jogador["id"]
+            st.success(f"Registro encontrado/criado. Seu papel: {jogador['papel']}.")
+            st.rerun()
         mostrar_indicadores(estado)
         st.info("Depois do registro, suas acoes da rodada aparecem aqui.")
-        return
-
-    jogador = buscar_jogador_por_matricula(matricula_atual, sessao["sessao_id"])
-    if not jogador:
-        st.warning("Nao encontrei seu cadastro. Registre-se novamente.")
         return
 
     rodada = estado["rodada_atual"]
@@ -54,6 +54,11 @@ def render_aluno(sessao_id: str | None = None) -> None:
 
     if rodada > estado["max_rodadas"]:
         st.info("O jogo foi encerrado pelo professor.")
+        return
+
+    if rodada_encerrada(estado):
+        st.warning("O tempo desta rodada terminou. Aguarde o professor iniciar a proxima rodada.")
+        mostrar_indicadores(estado)
         return
 
     if jogador_ja_decidiu(jogador["id"], rodada):
@@ -93,6 +98,27 @@ def somar_impactos(papel: str, acoes: list[str]) -> dict[str, int]:
         for indicador, delta in impacto_da_acao(papel, acao).items():
             total[indicador] = total.get(indicador, 0) + delta
     return total
+
+
+def obter_jogador(sessao_id: str) -> dict | None:
+    jogador_id = st.session_state.get("jogador_id") or st.query_params.get("jogador", "")
+    if jogador_id:
+        jogador = buscar_jogador_por_id(jogador_id, sessao_id)
+        if jogador:
+            st.session_state["jogador_id"] = jogador["id"]
+            st.session_state["matricula"] = jogador["matricula"]
+            return jogador
+
+    matricula = st.session_state.get("matricula", "")
+    if matricula:
+        return buscar_jogador_por_matricula(matricula, sessao_id)
+    return None
+
+
+def mostrar_cronometro(estado: dict) -> None:
+    restante = segundos_restantes(estado)
+    st.metric("Tempo restante da rodada", formatar_tempo(restante))
+    st.progress(restante / max(1, int(estado.get("duracao_rodada_seg") or 240)))
 
 
 def mostrar_indicadores(estado: dict) -> None:

@@ -6,19 +6,22 @@ Prototipo funcional em Python com Streamlit para a Unidade 1 do curso Agricultur
 
 ```text
 .
-├── app.py
-├── aluno.py
-├── professor.py
-├── regras.py
-├── dados.py
-├── requirements.txt
-├── render.yaml
-├── README.md
-└── data/
-    ├── jogadores.csv
-    ├── decisoes.csv
-    ├── estado_sistema.csv
-    └── historico_indicadores.csv
+|-- app.py
+|-- aluno.py
+|-- professor.py
+|-- regras.py
+|-- dados.py
+|-- tempo.py
+|-- qr_utils.py
+|-- requirements.txt
+|-- render.yaml
+|-- README.md
+`-- data/
+    |-- jogadores.csv
+    |-- decisoes.csv
+    |-- estado_sistema.csv
+    |-- historico_indicadores.csv
+    `-- sessao_aula.csv
 ```
 
 A pasta `data/` e os CSVs sao criados automaticamente na primeira execucao.
@@ -49,10 +52,13 @@ streamlit run app.py
 agronet
 ```
 
-3. Informe o nome da aula e a URL publica do app no Render.
+3. Informe o nome da aula, o tempo de cada rodada e a URL publica do app no Render.
 4. Clique em `Autorizar jogo e gerar sessao`.
 5. Mostre o QR Code aos alunos.
 6. Cada aluno acessa pelo QR Code, registra nome e matricula, escolhe o papel e envia ate duas acoes por rodada.
+7. Depois do primeiro cadastro, o link do aluno passa a conter um identificador do jogador. Assim, ao atualizar a pagina ou entrar na proxima rodada, ele nao precisa digitar nome e matricula novamente.
+
+O tempo padrao de cada rodada e 4 minutos, adequado para turmas de 10 a 15 alunos em uma decisao rapida. O professor pode ajustar entre 2 e 10 minutos ao criar a sessao.
 
 Para trocar a senha no Render, crie uma variavel de ambiente:
 
@@ -71,4 +77,4 @@ AGRONET_SENHA_PROFESSOR=sua-senha
 
 ## Observacao sobre dados
 
-Esta versao usa CSVs simples, sem banco de dados e sem pandas. Em hospedagens gratuitas, os dados podem ser apagados quando o servico reinicia. Para aulas presenciais, a execucao local costuma ser mais previsivel.
+Esta versao usa CSVs simples, sem banco de dados. Em hospedagens gratuitas, os dados podem ser apagados quando o servico reinicia. Para aulas presenciais, a execucao local costuma ser mais previsivel.

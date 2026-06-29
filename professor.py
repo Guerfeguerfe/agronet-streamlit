@@ -7,6 +7,7 @@ import streamlit as st
 from dados import avancar_rodada, carregar_decisoes, carregar_estado, carregar_historico, carregar_jogadores, carregar_sessao, criar_sessao, exportar_todos_csv, reiniciar_jogo
 from qr_utils import gerar_qr_png
 from regras import INDICADORES, resumo_rodada
+from tempo import formatar_tempo, segundos_restantes
 
 
 def render_professor() -> None:
@@ -24,10 +25,11 @@ def render_professor() -> None:
 
     render_sessao(sessao)
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Rodada atual", f"{estado['rodada_atual']} / {estado['max_rodadas']}")
     col2.metric("Alunos registrados", len(jogadores))
     col3.metric("Decisoes registradas", len(decisoes))
+    col4.metric("Tempo restante", formatar_tempo(segundos_restantes(estado)))
     st.metric("Indice de sustentabilidade do agroecossistema", f"{estado.get('Sustentabilidade geral', 0)}/100")
 
     st.info(resumo_rodada(estado))
@@ -97,11 +99,12 @@ def render_sessao(sessao: dict | None) -> None:
     st.subheader("Sessao da aula e QR Code")
     with st.form("nova_sessao"):
         nome_aula = st.text_input("Nome da aula", value=(sessao or {}).get("nome_aula", "Unidade 1 - Ecossistema e Agroecossistema"))
+        duracao_min = st.number_input("Tempo de cada rodada (minutos)", min_value=2, max_value=10, value=4, step=1)
         base_url = st.text_input("URL publica do app no Render", value=st.session_state.get("base_url", ""))
         criar = st.form_submit_button("Autorizar jogo e gerar sessao", use_container_width=True)
     if criar:
         st.session_state["base_url"] = base_url.strip()
-        criar_sessao(nome_aula)
+        criar_sessao(nome_aula, int(duracao_min) * 60)
         st.rerun()
 
     sessao = carregar_sessao()
