@@ -4,13 +4,19 @@ import random
 
 import streamlit as st
 
-from dados import buscar_jogador_por_matricula, carregar_estado, jogador_ja_decidiu, registrar_decisao, registrar_jogador, salvar_estado, registrar_historico
-from regras import acoes_do_papel, aplicar_impactos, feedback_da_acao, impacto_da_acao, listar_papeis
+from dados import buscar_jogador_por_matricula, buscar_sessao, carregar_estado, jogador_ja_decidiu, registrar_decisao, registrar_jogador, salvar_estado, registrar_historico
+from regras import INDICADORES, acoes_do_papel, aplicar_impactos, feedback_da_acao, impacto_da_acao, listar_papeis
 
 
-def render_aluno() -> None:
+def render_aluno(sessao_id: str | None = None) -> None:
     estado = carregar_estado()
+    sessao = buscar_sessao(sessao_id or "")
+    if not sessao or sessao.get("ativa") != "sim":
+        st.warning("Esta sessao de aula nao esta ativa. Peça ao professor o QR Code da aula atual.")
+        return
+
     st.subheader("Entrada do estudante")
+    st.caption(f"Sessao: {sessao['nome_aula']} | Codigo: {sessao['sessao_id']}")
     st.write("Registre-se, escolha ou sorteie seu papel e envie ate duas acoes na rodada atual.")
 
     with st.form("form_registro"):
@@ -25,16 +31,18 @@ def render_aluno() -> None:
             st.error("Informe nome e matricula para continuar.")
             st.stop()
         papel = random.choice(listar_papeis()) if modo_papel == "Sortear papel" else papel_escolhido
-        jogador = registrar_jogador(nome, matricula, papel)
+        jogador = registrar_jogador(nome, matricula, papel, sessao["sessao_id"])
         st.session_state["matricula"] = jogador["matricula"]
+        st.session_state["sessao_id"] = sessao["sessao_id"]
         st.success(f"Registro encontrado/criado. Seu papel: {jogador['papel']}.")
 
     matricula_atual = st.session_state.get("matricula", "")
     if not matricula_atual:
+        mostrar_indicadores(estado)
         st.info("Depois do registro, suas acoes da rodada aparecem aqui.")
         return
 
-    jogador = buscar_jogador_por_matricula(matricula_atual)
+    jogador = buscar_jogador_por_matricula(matricula_atual, sessao["sessao_id"])
     if not jogador:
         st.warning("Nao encontrei seu cadastro. Registre-se novamente.")
         return
@@ -50,6 +58,7 @@ def render_aluno() -> None:
 
     if jogador_ja_decidiu(jogador["id"], rodada):
         st.success("Voce ja enviou sua decisao nesta rodada. Aguarde a proxima rodada.")
+        mostrar_indicadores(estado)
         return
 
     opcoes = acoes_do_papel(jogador["papel"])
@@ -66,7 +75,7 @@ def render_aluno() -> None:
         novo_estado = aplicar_impactos(estado, [impactos])
         salvar_estado(novo_estado)
         registrar_decisao(jogador, rodada, acoes, impactos, " ".join(feedbacks))
-        registrar_historico(f"Decisao de {jogador['nome']} na rodada {rodada}")
+        registrar_historico(f"Decisao de {jogador['nome']} na rodada {rodada}", sessao["sessao_id"])
         st.success("Decisao registrada.")
         st.write("Acoes escolhidas:")
         for acao in acoes:
@@ -75,7 +84,7 @@ def render_aluno() -> None:
         for indicador, delta in impactos.items():
             st.write(f"- {indicador}: {delta:+d}")
         st.info(" ".join(feedbacks))
-        st.rerun()
+        mostrar_indicadores(novo_estado)
 
 
 def somar_impactos(papel: str, acoes: list[str]) -> dict[str, int]:
@@ -84,3 +93,16 @@ def somar_impactos(papel: str, acoes: list[str]) -> dict[str, int]:
         for indicador, delta in impacto_da_acao(papel, acao).items():
             total[indicador] = total.get(indicador, 0) + delta
     return total
+
+
+def mostrar_indicadores(estado: dict) -> None:
+    st.divider()
+    st.subheader("Desempenho do agroecossistema")
+    indice = estado.get("Sustentabilidade geral", 0)
+    st.metric("Indice de sustentabilidade do agroecossistema", f"{indice}/100")
+    st.progress(indice / 100)
+    cols = st.columns(2)
+    for posicao, indicador in enumerate(INDICADORES):
+        valor = estado.get(indicador, 0)
+        cols[posicao % 2].caption(indicador)
+        cols[posicao % 2].progress(valor / 100, text=f"{valor}/100")

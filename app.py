@@ -34,9 +34,13 @@ st.write(
     "producao, equilibrio ecologico, servicos ecossistemicos e sustentabilidade."
 )
 
-pagina = st.radio("Acesso", ["Aluno", "Professor"], horizontal=True)
+sessao_qr = st.query_params.get("sessao")
 
-if pagina == "Aluno":
-    render_aluno()
+if sessao_qr:
+    render_aluno(sessao_qr)
 else:
-    render_professor()
+    pagina = st.radio("Acesso", ["Aluno", "Professor"], horizontal=True)
+    if pagina == "Aluno":
+        st.info("Para entrar como aluno, use o QR Code ou o link gerado pelo professor para a aula.")
+    else:
+        render_professor()

@@ -40,6 +40,26 @@ streamlit run app.py
 
 4. Abra o endereco exibido no terminal. Em rede local, estudantes podem acessar pelo celular usando o IP do computador do professor e a porta do Streamlit.
 
+## Uso em aula
+
+1. Acesse a aba Professor.
+2. Entre com a senha padrao:
+
+```text
+agronet
+```
+
+3. Informe o nome da aula e a URL publica do app no Render.
+4. Clique em `Autorizar jogo e gerar sessao`.
+5. Mostre o QR Code aos alunos.
+6. Cada aluno acessa pelo QR Code, registra nome e matricula, escolhe o papel e envia ate duas acoes por rodada.
+
+Para trocar a senha no Render, crie uma variavel de ambiente:
+
+```text
+AGRONET_SENHA_PROFESSOR=sua-senha
+```
+
 ## Publicacao basica no Render
 
 1. Envie estes arquivos para um repositorio GitHub.

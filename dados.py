@@ -15,17 +15,20 @@ JOGADORES_CSV = DATA_DIR / "jogadores.csv"
 DECISOES_CSV = DATA_DIR / "decisoes.csv"
 ESTADO_CSV = DATA_DIR / "estado_sistema.csv"
 HISTORICO_CSV = DATA_DIR / "historico_indicadores.csv"
+SESSAO_CSV = DATA_DIR / "sessao_aula.csv"
 
-JOGADORES_COLUNAS = ["id", "nome", "matricula", "papel", "criado_em"]
-DECISOES_COLUNAS = ["id", "jogador_id", "nome", "matricula", "papel", "rodada", "acoes", "impactos", "feedback", "criado_em"]
+JOGADORES_COLUNAS = ["id", "sessao_id", "nome", "matricula", "papel", "criado_em"]
+DECISOES_COLUNAS = ["id", "sessao_id", "jogador_id", "nome", "matricula", "papel", "rodada", "acoes", "impactos", "feedback", "criado_em"]
 ESTADO_COLUNAS = ["rodada_atual", "max_rodadas", *INDICADORES]
-HISTORICO_COLUNAS = ["momento", "evento", "rodada_atual", "max_rodadas", *INDICADORES]
+HISTORICO_COLUNAS = ["momento", "sessao_id", "evento", "rodada_atual", "max_rodadas", *INDICADORES]
+SESSAO_COLUNAS = ["sessao_id", "nome_aula", "ativa", "criado_em"]
 
 
 def inicializar_dados() -> None:
     DATA_DIR.mkdir(exist_ok=True)
     criar_csv_se_nao_existir(JOGADORES_CSV, JOGADORES_COLUNAS)
     criar_csv_se_nao_existir(DECISOES_CSV, DECISOES_COLUNAS)
+    criar_csv_se_nao_existir(SESSAO_CSV, SESSAO_COLUNAS)
     if not ESTADO_CSV.exists():
         salvar_estado(ESTADO_INICIAL)
     if not HISTORICO_CSV.exists():
@@ -69,6 +72,39 @@ def carregar_historico() -> list[dict[str, str]]:
     return ler_linhas(HISTORICO_CSV)
 
 
+def carregar_sessao() -> dict | None:
+    inicializar_dados()
+    sessoes = ler_linhas(SESSAO_CSV)
+    for sessao in reversed(sessoes):
+        if sessao.get("ativa") == "sim":
+            return sessao
+    return sessoes[-1] if sessoes else None
+
+
+def buscar_sessao(sessao_id: str) -> dict | None:
+    inicializar_dados()
+    for sessao in reversed(ler_linhas(SESSAO_CSV)):
+        if sessao.get("sessao_id") == sessao_id:
+            return sessao
+    return None
+
+
+def criar_sessao(nome_aula: str) -> dict:
+    sessao = {
+        "sessao_id": uuid4().hex[:8],
+        "nome_aula": nome_aula.strip() or f"Aula {agora()}",
+        "ativa": "sim",
+        "criado_em": agora(),
+    }
+    escrever_linhas(SESSAO_CSV, SESSAO_COLUNAS, [sessao])
+    salvar_estado(ESTADO_INICIAL)
+    escrever_linhas(JOGADORES_CSV, JOGADORES_COLUNAS, [])
+    escrever_linhas(DECISOES_CSV, DECISOES_COLUNAS, [])
+    escrever_linhas(HISTORICO_CSV, HISTORICO_COLUNAS, [])
+    registrar_historico("Sessao iniciada", sessao["sessao_id"])
+    return sessao
+
+
 def carregar_estado() -> dict:
     DATA_DIR.mkdir(exist_ok=True)
     if not ESTADO_CSV.exists():
@@ -90,14 +126,15 @@ def salvar_estado(estado: dict) -> None:
     escrever_linhas(ESTADO_CSV, ESTADO_COLUNAS, [estado])
 
 
-def registrar_jogador(nome: str, matricula: str, papel: str) -> dict:
+def registrar_jogador(nome: str, matricula: str, papel: str, sessao_id: str) -> dict:
     jogadores = carregar_jogadores()
     for jogador in jogadores:
-        if jogador["matricula"].strip() == matricula.strip():
+        if jogador.get("sessao_id") == sessao_id and jogador["matricula"].strip() == matricula.strip():
             return jogador
 
     jogador = {
         "id": str(uuid4()),
+        "sessao_id": sessao_id,
         "nome": nome.strip(),
         "matricula": matricula.strip(),
         "papel": papel,
@@ -108,9 +145,9 @@ def registrar_jogador(nome: str, matricula: str, papel: str) -> dict:
     return jogador
 
 
-def buscar_jogador_por_matricula(matricula: str) -> dict | None:
+def buscar_jogador_por_matricula(matricula: str, sessao_id: str) -> dict | None:
     for jogador in carregar_jogadores():
-        if jogador["matricula"].strip() == matricula.strip():
+        if jogador.get("sessao_id") == sessao_id and jogador["matricula"].strip() == matricula.strip():
             return jogador
     return None
 
@@ -127,6 +164,7 @@ def registrar_decisao(jogador: dict, rodada: int, acoes: list[str], impactos: di
     decisoes.append(
         {
             "id": str(uuid4()),
+            "sessao_id": jogador.get("sessao_id", ""),
             "jogador_id": jogador["id"],
             "nome": jogador["nome"],
             "matricula": jogador["matricula"],
@@ -141,9 +179,10 @@ def registrar_decisao(jogador: dict, rodada: int, acoes: list[str], impactos: di
     escrever_linhas(DECISOES_CSV, DECISOES_COLUNAS, decisoes)
 
 
-def registrar_historico(evento: str) -> None:
+def registrar_historico(evento: str, sessao_id: str | None = None) -> None:
+    sessao = carregar_sessao()
     historico = ler_linhas(HISTORICO_CSV)
-    historico.append({"momento": agora(), "evento": evento, **carregar_estado()})
+    historico.append({"momento": agora(), "sessao_id": sessao_id or (sessao or {}).get("sessao_id", ""), "evento": evento, **carregar_estado()})
     escrever_linhas(HISTORICO_CSV, HISTORICO_COLUNAS, historico)
 
 
@@ -156,11 +195,12 @@ def avancar_rodada() -> None:
 
 
 def reiniciar_jogo() -> None:
+    sessao = carregar_sessao()
     salvar_estado(ESTADO_INICIAL)
     escrever_linhas(JOGADORES_CSV, JOGADORES_COLUNAS, [])
     escrever_linhas(DECISOES_CSV, DECISOES_COLUNAS, [])
     escrever_linhas(HISTORICO_CSV, HISTORICO_COLUNAS, [])
-    registrar_historico("Estado inicial")
+    registrar_historico("Estado inicial", (sessao or {}).get("sessao_id", ""))
 
 
 def exportar_todos_csv() -> bytes:

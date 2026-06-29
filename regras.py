@@ -14,6 +14,8 @@ INDICADORES = [
     "Sustentabilidade geral",
 ]
 
+INDICE_SUSTENTABILIDADE = "Sustentabilidade geral"
+
 ESTADO_INICIAL = {
     "rodada_atual": 1,
     "max_rodadas": 5,
@@ -242,6 +244,7 @@ def limitar(valor: int | float) -> int:
 
 
 def calcular_sustentabilidade(estado: dict) -> int:
+    """Calcula o indice de sustentabilidade do agroecossistema, de 0 a 100."""
     positivos = [
         estado.get("Biodiversidade", 0),
         estado.get("Fertilidade do solo", 0),
