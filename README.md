@@ -55,9 +55,11 @@ agronet
 3. Informe o nome da aula, o tempo de cada rodada e a URL publica do app no Render.
 4. Clique em `Autorizar jogo e gerar sessao`.
 5. Mostre o QR Code aos alunos.
-6. Cada aluno acessa pelo QR Code, registra nome e matricula, escolhe o papel e envia ate duas acoes por rodada.
-7. Depois do primeiro cadastro, o link do aluno passa a conter um identificador do jogador. Assim, ao atualizar a pagina ou entrar na proxima rodada, ele nao precisa digitar nome e matricula novamente.
-8. Quando o aluno ja enviou a decisao ou o tempo acabou, o botao `Proxima rodada` apenas atualiza a pagina dele. A rodada do jogo continua sendo aberta pelo professor no painel.
+6. Clique em `Liberar inicio da rodada` para iniciar a contagem do tempo da rodada atual.
+7. Cada aluno acessa pelo QR Code, registra nome e matricula, escolhe o papel e envia ate duas acoes por rodada.
+8. Depois do primeiro cadastro, o link do aluno passa a conter um identificador do jogador. Assim, ao atualizar a pagina ou entrar na proxima rodada, ele nao precisa digitar nome e matricula novamente.
+9. Quando o aluno ja enviou a decisao ou o tempo acabou, o botao `Proxima rodada` apenas atualiza a pagina dele. A rodada do jogo continua sendo aberta pelo professor no painel.
+10. Depois que o aluno envia as escolhas da ultima rodada, a tela mostra uma mensagem de encerramento e o resultado final do agroecossistema.
 
 O tempo padrao de cada rodada e 4 minutos, adequado para turmas de 10 a 15 alunos em uma decisao rapida. O professor pode ajustar entre 2 e 10 minutos ao criar a sessao.
 

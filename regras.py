@@ -73,6 +73,7 @@ ESTADO_INICIAL = {
     "rodada_atual": 1,
     "max_rodadas": 5,
     "rodada_inicio": "",
+    "rodada_aberta": "nao",
     "duracao_rodada_seg": 240,
     "Biodiversidade": 72,
     "Fertilidade do solo": 70,

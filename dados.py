@@ -19,8 +19,8 @@ SESSAO_CSV = DATA_DIR / "sessao_aula.csv"
 
 JOGADORES_COLUNAS = ["id", "sessao_id", "nome", "matricula", "papel", "criado_em"]
 DECISOES_COLUNAS = ["id", "sessao_id", "jogador_id", "nome", "matricula", "papel", "rodada", "acoes", "impactos", "feedback", "criado_em"]
-ESTADO_COLUNAS = ["rodada_atual", "max_rodadas", "rodada_inicio", "duracao_rodada_seg", *INDICADORES]
-HISTORICO_COLUNAS = ["momento", "sessao_id", "evento", "rodada_atual", "max_rodadas", "rodada_inicio", "duracao_rodada_seg", *INDICADORES]
+ESTADO_COLUNAS = ["rodada_atual", "max_rodadas", "rodada_inicio", "rodada_aberta", "duracao_rodada_seg", *INDICADORES]
+HISTORICO_COLUNAS = ["momento", "sessao_id", "evento", "rodada_atual", "max_rodadas", "rodada_inicio", "rodada_aberta", "duracao_rodada_seg", *INDICADORES]
 SESSAO_COLUNAS = ["sessao_id", "nome_aula", "ativa", "criado_em"]
 
 
@@ -98,7 +98,8 @@ def criar_sessao(nome_aula: str, duracao_rodada_seg: int = 240) -> dict:
     }
     escrever_linhas(SESSAO_CSV, SESSAO_COLUNAS, [sessao])
     estado = ESTADO_INICIAL.copy()
-    estado["rodada_inicio"] = agora()
+    estado["rodada_inicio"] = ""
+    estado["rodada_aberta"] = "nao"
     estado["duracao_rodada_seg"] = duracao_rodada_seg
     salvar_estado(estado)
     escrever_linhas(JOGADORES_CSV, JOGADORES_COLUNAS, [])
@@ -119,7 +120,8 @@ def carregar_estado() -> dict:
     estado = {
         "rodada_atual": int(float(linha.get("rodada_atual") or ESTADO_INICIAL["rodada_atual"])),
         "max_rodadas": int(float(linha.get("max_rodadas") or ESTADO_INICIAL["max_rodadas"])),
-        "rodada_inicio": linha.get("rodada_inicio") or agora(),
+        "rodada_inicio": linha.get("rodada_inicio") or "",
+        "rodada_aberta": linha.get("rodada_aberta") or ESTADO_INICIAL["rodada_aberta"],
         "duracao_rodada_seg": int(float(linha.get("duracao_rodada_seg") or ESTADO_INICIAL["duracao_rodada_seg"])),
     }
     for indicador in INDICADORES:
@@ -200,8 +202,14 @@ def registrar_historico(evento: str, sessao_id: str | None = None) -> None:
 
 def avancar_rodada() -> None:
     estado = carregar_estado()
-    if estado["rodada_atual"] < estado["max_rodadas"]:
+    if estado.get("rodada_aberta") != "sim":
+        estado["rodada_aberta"] = "sim"
+        estado["rodada_inicio"] = agora()
+        salvar_estado(estado)
+        registrar_historico(f"Inicio da rodada {estado['rodada_atual']}")
+    elif estado["rodada_atual"] < estado["max_rodadas"]:
         estado["rodada_atual"] += 1
+        estado["rodada_aberta"] = "sim"
         estado["rodada_inicio"] = agora()
         salvar_estado(estado)
         registrar_historico(f"Inicio da rodada {estado['rodada_atual']}")
@@ -210,7 +218,8 @@ def avancar_rodada() -> None:
 def reiniciar_jogo() -> None:
     sessao = carregar_sessao()
     estado = ESTADO_INICIAL.copy()
-    estado["rodada_inicio"] = agora()
+    estado["rodada_inicio"] = ""
+    estado["rodada_aberta"] = "nao"
     salvar_estado(estado)
     escrever_linhas(JOGADORES_CSV, JOGADORES_COLUNAS, [])
     escrever_linhas(DECISOES_CSV, DECISOES_COLUNAS, [])

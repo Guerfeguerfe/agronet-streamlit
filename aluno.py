@@ -6,7 +6,7 @@ import streamlit as st
 
 from dados import buscar_jogador_por_id, buscar_jogador_por_matricula, buscar_sessao, carregar_estado, jogador_ja_decidiu, registrar_decisao, registrar_jogador, salvar_estado, registrar_historico
 from regras import INDICADORES, acoes_do_papel, aplicar_impactos, feedback_da_acao, funcoes_do_papel, impacto_da_acao, listar_papeis
-from tempo import formatar_tempo, rodada_encerrada, segundos_restantes
+from tempo import formatar_tempo, rodada_encerrada, rodada_liberada, segundos_restantes
 
 
 def render_aluno(sessao_id: str | None = None) -> None:
@@ -54,16 +54,28 @@ def render_aluno(sessao_id: str | None = None) -> None:
     mostrar_papel(jogador["papel"])
 
     if rodada > estado["max_rodadas"]:
-        st.info("O jogo foi encerrado pelo professor.")
+        mostrar_resultado_final(estado)
         return
 
-    if rodada_encerrada(estado):
-        st.warning("O tempo desta rodada terminou. Aguarde o professor iniciar a proxima rodada.")
+    if not rodada_liberada(estado):
+        st.info("Aguardando o professor liberar o inicio desta rodada.")
         mostrar_indicadores(estado)
         botao_proxima_rodada()
         return
 
+    if rodada_encerrada(estado):
+        if rodada == estado["max_rodadas"]:
+            mostrar_resultado_final(estado)
+        else:
+            st.warning("O tempo desta rodada terminou. Aguarde o professor iniciar a proxima rodada.")
+            mostrar_indicadores(estado)
+            botao_proxima_rodada()
+        return
+
     if jogador_ja_decidiu(jogador["id"], rodada):
+        if rodada == estado["max_rodadas"]:
+            mostrar_resultado_final(estado)
+            return
         st.success("Voce ja enviou sua decisao nesta rodada. Aguarde a proxima rodada.")
         mostrar_indicadores(estado)
         botao_proxima_rodada()
@@ -97,8 +109,11 @@ def render_aluno(sessao_id: str | None = None) -> None:
         for indicador, delta in impactos.items():
             st.write(f"- {indicador}: {delta:+d}")
         st.info(" ".join(feedbacks))
-        mostrar_indicadores(novo_estado)
-        botao_proxima_rodada()
+        if rodada == estado["max_rodadas"]:
+            mostrar_resultado_final(novo_estado)
+        else:
+            mostrar_indicadores(novo_estado)
+            botao_proxima_rodada()
 
 
 def somar_impactos(papel: str, acoes: list[str]) -> dict[str, int]:
@@ -125,6 +140,10 @@ def obter_jogador(sessao_id: str) -> dict | None:
 
 
 def mostrar_cronometro(estado: dict) -> None:
+    if not rodada_liberada(estado):
+        st.metric("Tempo restante da rodada", "Aguardando inicio")
+        st.progress(0)
+        return
     restante = segundos_restantes(estado)
     st.metric("Tempo restante da rodada", formatar_tempo(restante))
     st.progress(restante / max(1, int(estado.get("duracao_rodada_seg") or 240)))
@@ -167,3 +186,9 @@ def mostrar_indicadores(estado: dict) -> None:
         valor = estado.get(indicador, 0)
         cols[posicao % 2].caption(indicador)
         cols[posicao % 2].progress(valor / 100, text=f"{valor}/100")
+
+
+def mostrar_resultado_final(estado: dict) -> None:
+    st.success("Jogo encerrado. Obrigado por participar do AgroNet.")
+    st.write("Este e o resultado final do agroecossistema apos as decisoes coletivas da ultima rodada.")
+    mostrar_indicadores(estado)

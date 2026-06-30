@@ -7,7 +7,7 @@ import streamlit as st
 from dados import avancar_rodada, carregar_decisoes, carregar_estado, carregar_historico, carregar_jogadores, carregar_sessao, criar_sessao, exportar_todos_csv, reiniciar_jogo
 from qr_utils import gerar_qr_png
 from regras import INDICADORES, resumo_rodada
-from tempo import formatar_tempo, segundos_restantes
+from tempo import formatar_tempo, rodada_liberada, segundos_restantes
 
 
 def render_professor() -> None:
@@ -29,7 +29,8 @@ def render_professor() -> None:
     col1.metric("Rodada atual", f"{estado['rodada_atual']} / {estado['max_rodadas']}")
     col2.metric("Alunos registrados", len(jogadores))
     col3.metric("Decisoes registradas", len(decisoes))
-    col4.metric("Tempo restante", formatar_tempo(segundos_restantes(estado)))
+    tempo_label = formatar_tempo(segundos_restantes(estado)) if rodada_liberada(estado) else "Aguardando"
+    col4.metric("Tempo restante", tempo_label)
 
     st.info(resumo_rodada(estado))
 
@@ -39,7 +40,8 @@ def render_professor() -> None:
 
     st.divider()
     acao1, acao2, acao3 = st.columns(3)
-    if acao1.button("Iniciar nova rodada", use_container_width=True):
+    texto_botao = texto_botao_rodada(estado)
+    if acao1.button(texto_botao, use_container_width=True, disabled=texto_botao == "Ultima rodada liberada"):
         avancar_rodada()
         st.rerun()
     if acao2.button("Reiniciar jogo", use_container_width=True):
@@ -126,6 +128,14 @@ def montar_url_aluno(base_url: str, sessao_id: str) -> str:
         return ""
     base = base_url.strip().rstrip("/")
     return f"{base}/?sessao={sessao_id}"
+
+
+def texto_botao_rodada(estado: dict) -> str:
+    if estado.get("rodada_aberta") != "sim":
+        return "Liberar inicio da rodada"
+    if estado.get("rodada_atual", 1) < estado.get("max_rodadas", 5):
+        return "Iniciar proxima rodada"
+    return "Ultima rodada liberada"
 
 
 def mostrar_barras(estado: dict) -> None:
